@@ -614,6 +614,20 @@ RUN touch /file
 		Expect(push.ErrorToString()).To(MatchRegexp("Copying blob.*Failed, retrying in 1s \\.\\.\\. \\(1/3\\).*Copying blob.*Failed, retrying in 2s"))
 	})
 
+	It("push --retry sets the retry count", func() {
+		SkipIfRemote("warning is not relayed in remote setup")
+		session := podmanTest.Podman([]string{"manifest", "create", "foo", imageList})
+		session.WaitWithDefaultTimeout()
+		Expect(session).Should(ExitCleanly())
+
+		// --retry overrides the default of 3, so the push should give
+		// up after a single retry instead.
+		push := podmanTest.Podman([]string{"manifest", "push", "--all", "--retry", "1", "--retry-delay", "1s", "--tls-verify=false", "--remove-signatures", "foo", "localhost:7000/bogus"})
+		push.WaitWithDefaultTimeout()
+		Expect(push).Should(ExitWithError(125, "Failed, retrying in 1s ... (1/1)"))
+		Expect(push.ErrorToString()).ToNot(ContainSubstring("(1/3)"))
+	})
+
 	It("authenticated push", func() {
 		registryOptions := &podmanRegistry.Options{
 			PodmanPath: podmanTest.PodmanBinary,

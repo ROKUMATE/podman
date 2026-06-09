@@ -80,6 +80,13 @@ func init() {
 
 	flags.BoolVarP(&manifestPushOpts.RemoveSignatures, "remove-signatures", "", false, "don't copy signatures when pushing images")
 
+	retryFlagName := "retry"
+	flags.Uint(retryFlagName, registry.RetryDefault(), "number of times to retry in case of failure when performing push")
+	_ = pushCmd.RegisterFlagCompletionFunc(retryFlagName, completion.AutocompleteNone)
+	retryDelayFlagName := "retry-delay"
+	flags.String(retryDelayFlagName, registry.RetryDelayDefault(), "delay between retries in case of push failures")
+	_ = pushCmd.RegisterFlagCompletionFunc(retryDelayFlagName, completion.AutocompleteNone)
+
 	common.DefineSigningFlags(pushCmd, &manifestPushOpts.signing, &manifestPushOpts.ImagePushOptions)
 
 	flags.BoolVar(&manifestPushOpts.TLSVerifyCLI, "tls-verify", true, "require HTTPS and verify certificates when accessing the registry")
@@ -147,6 +154,24 @@ func push(cmd *cobra.Command, args []string) error {
 			return errors.New("--insecure may not be used with --tls-verify")
 		}
 		manifestPushOpts.SkipTLSVerify = types.NewOptionalBool(manifestPushOpts.Insecure)
+	}
+
+	if cmd.Flags().Changed("retry") {
+		retry, err := cmd.Flags().GetUint("retry")
+		if err != nil {
+			return err
+		}
+
+		manifestPushOpts.Retry = &retry
+	}
+
+	if cmd.Flags().Changed("retry-delay") {
+		val, err := cmd.Flags().GetString("retry-delay")
+		if err != nil {
+			return err
+		}
+
+		manifestPushOpts.RetryDelay = val
 	}
 
 	if cmd.Flags().Changed("compression-level") {

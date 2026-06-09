@@ -60,6 +60,10 @@ Don't copy signatures when pushing images.
 
 Delete the manifest list or image index from local storage if pushing succeeds.
 
+@@option retry
+
+@@option retry-delay
+
 #### **--sign-by**=*fingerprint*
 
 Sign the pushed images with a “simple signing” signature using the specified key. (This option is not available with the remote Podman client, including Mac and Windows (excluding WSL2) machines)
